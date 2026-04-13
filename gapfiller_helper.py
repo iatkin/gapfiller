@@ -1,0 +1,87 @@
+#! /usr/bin/env python
+import argparse
+import sys
+from pathlib import Path
+import geopandas as gpd
+from pyproj import CRS
+from shapely.geometry import LineString
+
+import tempfile
+import subprocess
+
+import utils
+
+wgs84 = CRS.from_epsg(4326)
+
+command = "src/release/local_search --unmapped {unmapped} --land {land} --dst_srs ESRI:54009 --budget {budget} --plan {plan}"
+
+def existing_dir(path_str: str) -> str:
+    path = Path(path_str)
+    if not path.is_dir():
+        raise argparse.ArgumentTypeError(f"Directory does not exist: {path_str}")
+    return str(path)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Helper for gapfiller")
+    parser.add_argument("--source-lat", type=str, required=True, help="Source latitude (any GeoPandas-compatible format)")
+    parser.add_argument("--source-lon", type=str, required=True, help="Source longitude (any GeoPandas-compatible format)")
+    parser.add_argument("--dest-lat", type=str, required=True, help="Destination latitude (any GeoPandas-compatible format)")
+    parser.add_argument("--dest-lon", type=str, required=True, help="Destination longitude (any GeoPandas-compatible format)")
+    parser.add_argument(
+        "--budget",
+        type=float,
+        required=True,
+        help="Budget in meters.",
+    )
+    parser.add_argument(
+        "--gebco-dir",
+        type=existing_dir,
+        default="gebco_raster/",
+        help="Path to folder containing the GEBCO dataset (must exist). Default: gebco_raster/",
+    )
+    args = parser.parse_args()
+
+    source_lat = float(args.source_lat)
+    source_lon = float(args.source_lon)
+    dest_lat = float(args.dest_lat)
+    dest_lon = float(args.dest_lon)
+
+    
+
+    line = LineString([(source_lon, source_lat), (dest_lon, dest_lat)])
+    budget = float(args.budget) + line.length
+
+    line_gdf = gpd.GeoDataFrame(
+        geometry=[line],
+        crs=wgs84,
+    )
+
+    gebco_folder = args.gebco_dir
+
+    envelope = utils.line_to_ellipse(line_gdf, width=budget, resolution = 4)  # Example width of 100 km+
+
+    m = utils.Map(envelope, gebco_folder)
+    with tempfile.TemporaryDirectory(delete=False) as tmpdir:
+        unmapped_output_path = Path(tmpdir) / "unmapped_polygons.json"
+        unmapped_output_path.write_text(m.unmapped_polygons.to_json())
+        land_output_path = Path(tmpdir) / "land_polygons.json"
+        land_output_path.write_text(m.land_polygons.to_json())
+        plan_output_path = Path(tmpdir) / "plan.json"
+        plan_output_path.write_text(line_gdf.to_json())
+        cmd = command.format(
+                unmapped=unmapped_output_path,
+                land=land_output_path,
+                budget=budget,
+                plan=plan_output_path,
+            )
+        result = subprocess.run(
+            cmd,
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+        output_gdf = gpd.GeoDataFrame(
+            geometry=gpd.GeoSeries.from_wkt([result.stdout.strip()]),
+            crs=wgs84,
+        )
+        print(output_gdf.to_json())    

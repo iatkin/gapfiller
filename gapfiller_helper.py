@@ -2,6 +2,7 @@
 import argparse
 import sys
 from pathlib import Path
+import pandas as pd
 import geopandas as gpd
 from pyproj import CRS
 from shapely.geometry import LineString
@@ -39,6 +40,7 @@ if __name__ == "__main__":
         default="gebco_raster/",
         help="Path to folder containing the GEBCO dataset (must exist). Default: gebco_raster/",
     )
+    parser.add_argument("--swath", action="store_true", help="Emit swath in addition to centerline.", default=False)
     args = parser.parse_args()
 
     source_lat = float(args.source_lat)
@@ -46,7 +48,7 @@ if __name__ == "__main__":
     dest_lat = float(args.dest_lat)
     dest_lon = float(args.dest_lon)
 
-    
+    swath = args.swath
 
     line = LineString([(source_lon, source_lat), (dest_lon, dest_lat)])
     budget = float(args.budget) + line.length
@@ -84,4 +86,7 @@ if __name__ == "__main__":
             geometry=gpd.GeoSeries.from_wkt([result.stdout.strip()]),
             crs=wgs84,
         )
+        if swath:
+            swath_gdf = m.survey_line(output_gdf)
+            output_gdf = gpd.GeoDataFrame(pd.concat([output_gdf, swath_gdf[0]], ignore_index=True), crs = output_gdf.crs)
         print(output_gdf.to_json())    

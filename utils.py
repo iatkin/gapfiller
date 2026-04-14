@@ -22,6 +22,7 @@ import pandas as pd
 
 wgs84 = CRS.from_epsg(4326)
 web_mercator = CRS.from_epsg(3857)
+metric_crs = web_mercator
 
 land_buffer_width = 3000
 

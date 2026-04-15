@@ -300,8 +300,17 @@ def load_raster(filename, bbox):
         return ds.read(1, window=window), transform, crs
 
 class Map:
-    def __init__(self, mask, gebco_folder):
-        self.beam = pd.read_csv("EM302nautilus.txt",sep = r"\s+", header=None, names= ["depth", "extinction"], index_col = "depth")
+    def __init__(self, mask, gebco_folder, extinction_file = "EM302nautilus.txt"):
+        self.beam = None
+        if os.path.isfile(extinction_file):
+            self.beam = pd.read_csv(extinction_file, sep = r"\s+", header=None, names= ["depth", "extinction"], index_col = "depth")
+        else:
+            extinction = []
+            for pair in extinction_file.split(","):
+                depth, ext = pair.strip().split()
+                extinction.append((float(depth), float(ext)))
+            self.beam = pd.DataFrame(extinction, columns=["depth", "extinction"]).set_index("depth")
+        
         tid_files = glob.glob(os.path.join(gebco_folder, "*_tid_*.tif"))
         self.tid_raster, self.tid_transform, self.tid_crs = load_gebco_region(tid_files, mask)
         depth_files = glob.glob(os.path.join(gebco_folder, "*_sub_ice_*.tif"))

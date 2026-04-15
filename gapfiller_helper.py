@@ -40,6 +40,12 @@ if __name__ == "__main__":
         default="gebco_raster/",
         help="Path to folder containing the GEBCO dataset (must exist). Default: gebco_raster/",
     )
+    parser.add_argument(
+        "--extinction",
+        type=str,
+        default="EM302nautilus.txt",
+        help="Extinction curve filename or comma-separated extinction curve. Default: EM302nautilus.txt\nExample: --extinction EM302nautilus.txt or --extinction 0.0 5.6,1608.0 6.6,3000.0 3.133,4000.0 2.205,5000.0 1.644,6000.0 1.198, ..."
+    )
     parser.add_argument("--swath", action="store_true", help="Emit swath in addition to centerline.", default=False)
     args = parser.parse_args()
 
@@ -62,7 +68,7 @@ if __name__ == "__main__":
 
     envelope = utils.line_to_ellipse(line_gdf, width=budget, resolution = 4)  # Example width of 100 km+
 
-    m = utils.Map(envelope, gebco_folder)
+    m = utils.Map(envelope, gebco_folder, extinction_file=args.extinction)
     with tempfile.TemporaryDirectory(delete=True) as tmpdir:
         unmapped_output_path = Path(tmpdir) / "unmapped_polygons.json"
         unmapped_output_path.write_text(m.unmapped_polygons.to_json())

@@ -306,9 +306,10 @@ class Map:
         self.tid_raster, self.tid_transform, self.tid_crs = load_gebco_region(tid_files, mask)
         depth_files = glob.glob(os.path.join(gebco_folder, "*_sub_ice_*.tif"))
         self.depth_raster, self.depth_transform, self.depth_crs = load_gebco_region(depth_files, mask)
-        self.land_raster = (255 * (self.depth_raster < 0)).astype(np.uint8)
+        # self.land_raster = (255 * (self.depth_raster < 0)).astype(np.uint8)
         self.land_raster = (self.tid_raster == 0).astype(np.uint8)
-        self.unmapped_raster = self.tid_raster != 11 # (self.tid_raster > 17) * (1 - self.land_raster)
+        self.tid_raster = self.tid_raster.astype(np.uint8)
+        self.unmapped_raster = (self.tid_raster != 11).astype(np.uint8)  # (self.tid_raster > 17) * (1 - self.land_raster)
 
         # print(self.depth_raster.shape)
         # bbox = (-180.0, 0, 180, 90)

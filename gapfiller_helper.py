@@ -14,8 +14,6 @@ import utils
 
 wgs84 = CRS.from_epsg(4326)
 
-command = "src/release/local_search --unmapped {unmapped} --land {land} --dst_srs ESRI:54009 --budget {budget} --plan {plan}"
-
 def existing_dir(path_str: str) -> str:
     path = Path(path_str)
     if not path.is_dir():
@@ -47,6 +45,7 @@ if __name__ == "__main__":
         help="Extinction curve filename or comma-separated extinction curve. Default: EM302nautilus.txt\nExample: --extinction EM302nautilus.txt or --extinction 0.0 5.6,1608.0 6.6,3000.0 3.133,4000.0 2.205,5000.0 1.644,6000.0 1.198, ..."
     )
     parser.add_argument("--swath", action="store_true", help="Emit swath in addition to centerline.", default=False)
+    parser.add_argument("--bin-path", type=str, default="src/release", help="Location of local_search")
     args = parser.parse_args()
 
     source_lat = float(args.source_lat)
@@ -55,6 +54,8 @@ if __name__ == "__main__":
     dest_lon = float(args.dest_lon)
 
     swath = args.swath
+
+    command = "{bin_path}/local_search --unmapped {unmapped} --land {land} --dst_srs ESRI:54009 --budget {budget} --plan {plan}"
 
     line = LineString([(source_lon, source_lat), (dest_lon, dest_lat)])
     budget = float(args.budget) + line.length
@@ -77,6 +78,7 @@ if __name__ == "__main__":
         plan_output_path = Path(tmpdir) / "plan.json"
         plan_output_path.write_text(line_gdf.to_json())
         cmd = command.format(
+                bin_path=args.bin_path,
                 unmapped=unmapped_output_path,
                 land=land_output_path,
                 budget=budget,

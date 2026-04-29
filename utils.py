@@ -419,7 +419,7 @@ class Map:
             pgon_merc = pgon_merc.simplify(.005)
 
             pgon_merc = pgon_merc.to_crs(web_mercator).iloc[0]
-            new_gon_merc = pgon_merc.buffer(-beam_width / 2)
+            new_gon_merc = pgon_merc.buffer(-beam_width / 2, join_style=3)
             if new_gon_merc.area > 0:
                 new_gon = gpd.GeoSeries([new_gon_merc], crs=web_mercator).to_crs(self.unmapped_polygons.crs).iloc[0]
                 shrunk.append(new_gon)
@@ -434,7 +434,7 @@ class Map:
             pgon_merc = gpd.GeoSeries([pgon], crs=self.land_polygons.crs)
 
             pgon_merc = pgon_merc.to_crs(web_mercator).iloc[0]
-            new_gon_merc = pgon_merc.buffer(land_buffer_width)
+            new_gon_merc = pgon_merc.buffer(land_buffer_width, join_style=3)
             if new_gon_merc.area > 0:
                 new_gon = gpd.GeoSeries([new_gon_merc], crs=web_mercator).to_crs(self.land_polygons.crs).iloc[0]
                 new_gon = new_gon.simplify(.005)

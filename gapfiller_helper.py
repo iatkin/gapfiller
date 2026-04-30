@@ -10,7 +10,7 @@ from shapely.geometry import LineString
 import tempfile
 import subprocess
 
-import utils
+from beam import utils
 
 wgs84 = CRS.from_epsg(4326)
 

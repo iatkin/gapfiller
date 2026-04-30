@@ -95,6 +95,6 @@ if __name__ == "__main__":
             crs=wgs84,
         )
         if swath:
-            swath_gdf = m.survey_line(output_gdf)
+            swath_gdf = m.survey_line_3D(output_gdf)
             output_gdf = gpd.GeoDataFrame(pd.concat([output_gdf, swath_gdf[0]], ignore_index=True), crs = output_gdf.crs)
         print(output_gdf.to_json())    
